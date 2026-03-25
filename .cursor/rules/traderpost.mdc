@@ -1,0 +1,22 @@
+# Cursor Rules for Traderpost
+
+## Project Context
+**App:** Traderpost  
+**Stack:** Next.js 14, TypeScript, Supabase, Tailwind CSS, shadcn/ui, Recharts  
+**Stage:** MVP Development  
+**User Level:** A (Vibe-coder)
+
+## Directives
+1. **Master Plan:** Read `AGENTS.md` first for current phase and priorities.
+2. **Documentation:** Use `agent_docs/` for requirements, stack details, patterns, and testing rules.
+3. **Plan First:** Propose a short plan and wait for approval before multi-file edits.
+4. **Incremental Build:** Implement one feature slice at a time.
+5. **Verify:** Run lint/tests/manual checks after each slice.
+6. **Scope Control:** Do not add features outside the active phase.
+7. **Security:** Keep secrets server-side and preserve RLS/auth protections.
+
+## Commands
+- `npm run dev`
+- `npm test`
+- `npm run lint`
+- `npm run build`

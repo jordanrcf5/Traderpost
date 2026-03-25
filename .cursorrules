@@ -1,0 +1,8 @@
+# Cursor Rules for Traderpost (Legacy Fallback)
+
+1. Read `AGENTS.md` first before implementing anything.
+2. Use `agent_docs/` for detailed context (`tech_stack.md`, `product_requirements.md`, `testing.md`).
+3. Propose a short plan before multi-file changes.
+4. Build incrementally and verify after each feature slice.
+5. Run `npm run lint` and relevant tests before calling work complete.
+6. Keep API keys server-side only; never expose secrets in client code.
