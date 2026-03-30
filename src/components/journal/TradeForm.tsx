@@ -5,35 +5,12 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { TradeDirection, TradingSession } from "@/lib/types/trade";
 import { calculatePnl, calculateRiskRewardRatio } from "@/lib/utils/trade-calculations";
-
-const INSTRUMENT_PRESETS = [
-  "NQ",
-  "ES",
-  "BTC",
-  "ETH",
-  "EUR/USD",
-  "GBP/USD",
-  "Gold",
-  "Other",
-] as const;
-
-const SESSIONS: { value: TradingSession; label: string }[] = [
-  { value: "london", label: "London" },
-  { value: "ny", label: "New York" },
-  { value: "asian", label: "Asian" },
-  { value: "overnight", label: "Overnight" },
-];
-
-const EMOTION_OPTIONS = [
-  "focused",
-  "patient",
-  "fomo",
-  "revenge",
-  "overconfident",
-  "anxious",
-] as const;
-
-const SETUP_SUGGESTIONS = ["FVG", "OB", "BOS", "CHoCH", "Liquidity Sweep"];
+import {
+  INSTRUMENT_GROUPS,
+  SESSIONS,
+  EMOTION_OPTIONS,
+  SETUP_SUGGESTIONS,
+} from "@/lib/journal/trade-constants";
 
 const SCREENSHOT_BUCKET = "trade-screenshots";
 const MAX_SCREENSHOT_BYTES = 5 * 1024 * 1024;
@@ -61,8 +38,7 @@ export default function TradeForm({ userId, strategies }: TradeFormProps) {
   const router = useRouter();
   const screenshotInputRef = useRef<HTMLInputElement>(null);
 
-  const [instrumentPreset, setInstrumentPreset] =
-    useState<(typeof INSTRUMENT_PRESETS)[number]>("NQ");
+  const [instrumentPreset, setInstrumentPreset] = useState("NQ");
   const [instrumentCustom, setInstrumentCustom] = useState("");
   const [direction, setDirection] = useState<TradeDirection>("long");
   const [entryPrice, setEntryPrice] = useState("");
@@ -252,14 +228,16 @@ export default function TradeForm({ userId, strategies }: TradeFormProps) {
           <select
             className={inputClass}
             value={instrumentPreset}
-            onChange={(e) =>
-              setInstrumentPreset(e.target.value as (typeof INSTRUMENT_PRESETS)[number])
-            }
+            onChange={(e) => setInstrumentPreset(e.target.value)}
           >
-            {INSTRUMENT_PRESETS.map((opt) => (
-              <option key={opt} value={opt}>
-                {opt}
-              </option>
+            {INSTRUMENT_GROUPS.map((group) => (
+              <optgroup key={group.label} label={group.label}>
+                {group.instruments.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </optgroup>
             ))}
           </select>
         </label>

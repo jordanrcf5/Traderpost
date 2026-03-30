@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import TradeForm from "@/components/journal/TradeForm";
-import TradeList from "@/components/journal/TradeList";
+import JournalClient from "@/components/journal/JournalClient";
 import { attachSignedScreenshotUrls, type TradeRowFromDb } from "@/lib/journal/trade-list";
 import { createClient } from "@/lib/supabase/server";
 
@@ -41,7 +41,7 @@ export default async function JournalPage() {
         chart screenshot — stored privately in Supabase Storage.
       </p>
       <TradeForm userId={user.id} strategies={strategies ?? []} />
-      <TradeList trades={trades} />
+      <JournalClient trades={trades} strategies={strategies ?? []} />
     </main>
   );
 }
