@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import TradeForm from "@/components/journal/TradeForm";
 import JournalClient from "@/components/journal/JournalClient";
+import CsvImportModal from "@/components/journal/CsvImportModal";
 import { attachSignedScreenshotUrls, type TradeRowFromDb } from "@/lib/journal/trade-list";
 import { createClient } from "@/lib/supabase/server";
 
@@ -35,13 +36,16 @@ export default async function JournalPage() {
 
   return (
     <main>
-      <h1 className="text-2xl font-semibold">Trade Journal</h1>
+      <div className="flex items-center gap-4">
+        <h1 className="text-2xl font-semibold">Trade Journal</h1>
+        <CsvImportModal userId={user.id} />
+      </div>
       <p className="mt-2 max-w-2xl text-slate-300">
         Log a trade with full context. PnL and R-multiple update as you type. Attach an optional
         chart screenshot — stored privately in Supabase Storage.
       </p>
       <TradeForm userId={user.id} strategies={strategies ?? []} />
-      <JournalClient trades={trades} strategies={strategies ?? []} />
+      <JournalClient trades={trades} strategies={strategies ?? []} userId={user.id} />
     </main>
   );
 }

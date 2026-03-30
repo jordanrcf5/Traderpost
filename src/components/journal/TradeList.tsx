@@ -85,26 +85,6 @@ export default function TradeList({ trades, onEdit, onDelete }: TradeListProps) 
                     {t.direction}
                   </span>
                   <span className="text-sm text-slate-400">{formatDate(t.trade_date)}</span>
-                  <div className="ml-auto flex gap-2">
-                    {onEdit && (
-                      <button
-                        type="button"
-                        onClick={() => onEdit(t)}
-                        className="rounded px-2 py-0.5 text-xs text-slate-400 border border-slate-600 hover:border-[#00C896] hover:text-[#00C896] transition-colors"
-                      >
-                        Edit
-                      </button>
-                    )}
-                    {onDelete && (
-                      <button
-                        type="button"
-                        onClick={() => confirmDelete(t)}
-                        className="rounded px-2 py-0.5 text-xs text-slate-400 border border-slate-600 hover:border-red-500 hover:text-red-400 transition-colors"
-                      >
-                        Delete
-                      </button>
-                    )}
-                  </div>
                 </div>
                 <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm sm:grid-cols-3">
                   <div>
@@ -158,8 +138,30 @@ export default function TradeList({ trades, onEdit, onDelete }: TradeListProps) 
                   <p className="whitespace-pre-wrap text-sm text-slate-300">{t.notes}</p>
                 ) : null}
               </div>
-              {t.screenshotSignedUrl ? (
-                <div className="shrink-0 md:w-56">
+              <div className="shrink-0 flex flex-col items-end gap-3 md:w-56">
+                {(onEdit || onDelete) && (
+                  <div className="flex gap-2">
+                    {onEdit && (
+                      <button
+                        type="button"
+                        onClick={() => onEdit(t)}
+                        className="rounded px-2 py-0.5 text-xs text-slate-400 border border-slate-600 hover:border-[#00C896] hover:text-[#00C896] transition-colors"
+                      >
+                        Edit
+                      </button>
+                    )}
+                    {onDelete && (
+                      <button
+                        type="button"
+                        onClick={() => confirmDelete(t)}
+                        className="rounded px-2 py-0.5 text-xs text-slate-400 border border-slate-600 hover:border-red-500 hover:text-red-400 transition-colors"
+                      >
+                        Delete
+                      </button>
+                    )}
+                  </div>
+                )}
+                {t.screenshotSignedUrl ? (
                   <button
                     type="button"
                     onClick={() =>
@@ -184,12 +186,12 @@ export default function TradeList({ trades, onEdit, onDelete }: TradeListProps) 
                       Click to enlarge
                     </span>
                   </button>
-                </div>
-              ) : t.screenshot_url ? (
-                <p className="shrink-0 text-xs text-amber-400/90 md:w-40">
-                  Chart attached — could not load preview (check Storage policies).
-                </p>
-              ) : null}
+                ) : t.screenshot_url ? (
+                  <p className="text-xs text-amber-400/90">
+                    Chart attached — could not load preview (check Storage policies).
+                  </p>
+                ) : null}
+              </div>
             </div>
           </li>
         ))}

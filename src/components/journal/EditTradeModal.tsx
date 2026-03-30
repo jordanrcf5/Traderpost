@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -20,9 +20,14 @@ import { calculatePnl, calculateRiskRewardRatio } from "@/lib/utils/trade-calcul
 import type { TradeDirection, TradingSession } from "@/lib/types/trade";
 import type { TradeListRow } from "@/lib/journal/trade-list";
 
+const SCREENSHOT_BUCKET = "trade-screenshots";
+const MAX_SCREENSHOT_BYTES = 5 * 1024 * 1024;
+const ALLOWED_IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/webp", "image/gif"]);
+
 type Props = {
   trade: TradeListRow;
   strategies: { id: string; name: string }[];
+  userId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 };
@@ -45,9 +50,10 @@ function toDatetimeLocal(iso: string): string {
 const inputClass =
   "mt-1 w-full rounded-md border border-slate-600 bg-slate-900 px-3 py-2 text-slate-100 outline-none focus:border-[#00C896]";
 
-export default function EditTradeModal({ trade, strategies, open, onOpenChange }: Props) {
+export default function EditTradeModal({ trade, strategies, userId, open, onOpenChange }: Props) {
   const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
+  const screenshotInputRef = useRef<HTMLInputElement>(null);
 
   const initialPreset = ALL_PRESET_INSTRUMENTS.includes(trade.instrument)
     ? trade.instrument
@@ -73,6 +79,8 @@ export default function EditTradeModal({ trade, strategies, open, onOpenChange }
   const [emotionTags, setEmotionTags] = useState<string[]>(trade.emotion_tags ?? []);
   const [rating, setRating] = useState<number | "">(trade.rating ?? "");
   const [notes, setNotes] = useState(trade.notes ?? "");
+  const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
+  const [removeScreenshot, setRemoveScreenshot] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -133,7 +141,56 @@ export default function EditTradeModal({ trade, strategies, open, onOpenChange }
     const rr = calculateRiskRewardRatio(pnl, risk ?? null);
     const tradeDateIso = new Date(tradeDate).toISOString();
 
+    // screenshot_url: undefined = no change, null = remove, string = new path
+    let newScreenshotUrl: string | null | undefined = undefined;
+
+    if (screenshotFile) {
+      if (screenshotFile.size > MAX_SCREENSHOT_BYTES) {
+        setError("Chart image must be 5 MB or smaller.");
+        return;
+      }
+      if (!ALLOWED_IMAGE_TYPES.has(screenshotFile.type)) {
+        setError("Use PNG, JPEG, WebP, or GIF for the chart screenshot.");
+        return;
+      }
+    }
+
     setLoading(true);
+
+    if (removeScreenshot) {
+      if (trade.screenshot_url) {
+        await supabase.storage.from(SCREENSHOT_BUCKET).remove([trade.screenshot_url]);
+      }
+      newScreenshotUrl = null;
+    } else if (screenshotFile) {
+      const extFromName = screenshotFile.name.split(".").pop()?.toLowerCase();
+      const ext =
+        extFromName === "jpg" || extFromName === "jpeg" ? "jpeg"
+        : extFromName === "png" || extFromName === "webp" || extFromName === "gif" ? extFromName
+        : screenshotFile.type === "image/png" ? "png"
+        : screenshotFile.type === "image/webp" ? "webp"
+        : screenshotFile.type === "image/gif" ? "gif"
+        : "jpeg";
+
+      const uploadPath = `${userId}/${crypto.randomUUID()}.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from(SCREENSHOT_BUCKET)
+        .upload(uploadPath, screenshotFile, { contentType: screenshotFile.type || undefined, upsert: false });
+
+      if (uploadError) {
+        setLoading(false);
+        setError(uploadError.message);
+        return;
+      }
+
+      // Delete old screenshot after successful upload
+      if (trade.screenshot_url) {
+        await supabase.storage.from(SCREENSHOT_BUCKET).remove([trade.screenshot_url]);
+      }
+
+      newScreenshotUrl = uploadPath;
+    }
 
     const { error: updateError } = await supabase
       .from("trades")
@@ -152,6 +209,7 @@ export default function EditTradeModal({ trade, strategies, open, onOpenChange }
         emotion_tags: emotionTags.length ? emotionTags : null,
         rating: ratingValue,
         notes: notes.trim() || null,
+        ...(newScreenshotUrl !== undefined ? { screenshot_url: newScreenshotUrl } : {}),
       })
       .eq("id", trade.id);
 
@@ -404,6 +462,66 @@ export default function EditTradeModal({ trade, strategies, open, onOpenChange }
               rows={4}
             />
           </label>
+
+          <div className="space-y-3">
+            <span className="block text-sm text-slate-200">Chart screenshot</span>
+
+            {trade.screenshotSignedUrl && !removeScreenshot && !screenshotFile && (
+              <div className="space-y-2">
+                <p className="text-xs text-slate-400">Current screenshot</p>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={trade.screenshotSignedUrl}
+                  alt="Current chart screenshot"
+                  className="max-h-40 w-full rounded-md border border-slate-600 object-contain bg-slate-900/50"
+                />
+              </div>
+            )}
+
+            {removeScreenshot && (
+              <p className="text-xs text-amber-400">Screenshot will be removed on save.</p>
+            )}
+
+            <label className="block text-sm text-slate-200">
+              {trade.screenshot_url && !removeScreenshot ? "Replace screenshot" : "Upload screenshot"}
+              <input
+                ref={screenshotInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/gif"
+                className={`${inputClass} cursor-pointer file:mr-3 file:rounded file:border-0 file:bg-slate-700 file:px-3 file:py-1 file:text-sm file:text-slate-200`}
+                onChange={(e) => {
+                  const file = e.target.files?.[0] ?? null;
+                  setScreenshotFile(file);
+                  if (file) setRemoveScreenshot(false);
+                }}
+              />
+              <span className="mt-1 block text-xs text-slate-500">PNG, JPEG, WebP, or GIF. Max 5 MB.</span>
+            </label>
+
+            {trade.screenshot_url && !removeScreenshot && (
+              <button
+                type="button"
+                className="text-xs text-red-400 hover:text-red-300 underline"
+                onClick={() => {
+                  setRemoveScreenshot(true);
+                  setScreenshotFile(null);
+                  if (screenshotInputRef.current) screenshotInputRef.current.value = "";
+                }}
+              >
+                Remove screenshot
+              </button>
+            )}
+
+            {removeScreenshot && (
+              <button
+                type="button"
+                className="text-xs text-slate-400 hover:text-slate-200 underline"
+                onClick={() => setRemoveScreenshot(false)}
+              >
+                Undo remove
+              </button>
+            )}
+          </div>
 
           {error && <p className="text-sm text-red-400">{error}</p>}
 

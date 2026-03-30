@@ -12,6 +12,7 @@ import { MARKET_TYPE_MAP } from "@/lib/journal/trade-constants";
 type Props = {
   trades: TradeListRow[];
   strategies: { id: string; name: string }[];
+  userId: string;
 };
 
 const EMPTY_FILTERS: TradeFilterState = {
@@ -53,7 +54,7 @@ function applyFilters(trades: TradeListRow[], f: TradeFilterState): TradeListRow
   });
 }
 
-export default function JournalClient({ trades, strategies }: Props) {
+export default function JournalClient({ trades, strategies, userId }: Props) {
   const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
 
@@ -99,6 +100,7 @@ export default function JournalClient({ trades, strategies }: Props) {
         <EditTradeModal
           trade={editTrade}
           strategies={strategies}
+          userId={userId}
           open={editTrade !== null}
           onOpenChange={(open) => { if (!open) setEditTrade(null); }}
         />
