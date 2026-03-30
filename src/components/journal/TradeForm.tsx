@@ -11,6 +11,7 @@ import {
   EMOTION_OPTIONS,
   SETUP_SUGGESTIONS,
 } from "@/lib/journal/trade-constants";
+import CsvImportModal from "@/components/journal/CsvImportModal";
 
 const SCREENSHOT_BUCKET = "trade-screenshots";
 const MAX_SCREENSHOT_BYTES = 5 * 1024 * 1024;
@@ -470,13 +471,16 @@ export default function TradeForm({ userId, strategies }: TradeFormProps) {
       {error ? <p className="text-sm text-red-400">{error}</p> : null}
       {success ? <p className="text-sm text-emerald-400">{success}</p> : null}
 
-      <button
-        type="submit"
-        className="rounded-md bg-[#00C896] px-5 py-2.5 font-medium text-slate-950 hover:opacity-90 disabled:opacity-60"
-        disabled={loading}
-      >
-        {loading ? "Saving..." : "Save trade"}
-      </button>
+      <div className="flex flex-wrap items-center gap-3">
+        <CsvImportModal userId={userId} className="flex-1" />
+        <button
+          type="submit"
+          className="flex-1 h-12 rounded-md bg-[#00C896] px-5 font-medium text-slate-950 hover:opacity-90 disabled:opacity-60"
+          disabled={loading}
+        >
+          {loading ? "Saving..." : "Save trade"}
+        </button>
+      </div>
     </form>
   );
 }
